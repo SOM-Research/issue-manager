@@ -1,0 +1,33 @@
+name: 'Issue Manager'
+description: ''
+inputs:
+  repo_name:
+    description: ''
+    required: true
+  repo_url:
+    description: 'Sendinblue API key'
+    required: true
+  bot_token:
+    description: 'Bot GitHub token'
+    required: true
+  event_action:
+    description: ''
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create issue for incomplete Code of Conduct
+      if: inputs.event_action = 'code_of_conduct_incomplete'
+      run: |
+          issue_body="We have detected that your current Code of Conduct appears to be incomplete or contains only a link. To help us manage comments and ensure a comprehensive Code of Conduct, we would appreciate it if you could provide more detailed guidelines."
+
+          echo "Creating issue with the following body:"
+          echo "$issue_body"
+          
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ inputs.bot_token }}" \
+            https://api.github.com/repos/${{ inputs.repo_name }}/issues \
+            -d "{\"title\": \"Incomplete Code of Conduct Detected\", \"body\": \"$issue_body\"}"
+      
