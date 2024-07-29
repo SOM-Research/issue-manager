@@ -18,7 +18,8 @@ runs:
   using: 'composite'
   steps:
     - name: Create issue for incomplete Code of Conduct
-      if: inputs.event_action = 'code_of_conduct_incomplete'
+      shell: bash
+      if: inputs.event_action == 'code_of_conduct_incomplete'
       run: |
           issue_body="We have detected that your current Code of Conduct appears to be incomplete or contains only a link. To help us manage comments and ensure a comprehensive Code of Conduct, we would appreciate it if you could provide more detailed guidelines."
 
