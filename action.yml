@@ -1,15 +1,18 @@
 name: 'Issue Manager'
-description: ''
+description: 'Creates issues based on the completeness of the Code of Conduct'
 inputs:
   repo_name:
-    description: ''
+    description: 'The name of the repository where the issue will be created'
     required: true
   bot_token:
-    description: 'Bot GitHub token'
+    description: 'GitHub token for authentication as the bot user'
     required: true
   event_action:
-    description: ''
+    description: 'The action to determine which type of issue to create'
     required: true
+  missing_flags:
+    description: 'A list of missing guidelines flags'
+    required: false
 
 runs:
   using: 'composite'
@@ -18,14 +21,71 @@ runs:
       shell: bash
       if: inputs.event_action == 'code_of_conduct_incomplete'
       run: |
-          issue_body="We have detected that your current Code of Conduct appears to be incomplete or contains only a link. To help us manage comments and ensure a comprehensive Code of Conduct, we would appreciate it if you could provide more detailed guidelines."
+        issue_body="We have detected that your current Code of Conduct appears to be incomplete or contains only a link. To help us manage comments and ensure a comprehensive Code of Conduct, we would appreciate it if you could provide more detailed guidelines."
 
-          echo "Creating issue with the following body:"
-          echo "$issue_body"
-          
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ inputs.bot_token }}" \
-            https://api.github.com/repos/${{ inputs.repo_name }}/issues \
-            -d "{\"title\": \"Incomplete Code of Conduct Detected\", \"body\": \"$issue_body\"}"
-      
+        echo "Creating issue with the following body:"
+        echo "$issue_body"
+
+        curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ inputs.bot_token }}" \
+          https://api.github.com/repos/${{ inputs.repo_name }}/issues \
+          -d "{\"title\": \"Incomplete Code of Conduct Detected\", \"body\": \"$issue_body\"}"
+
+    - name: Create issue for missing guidelines
+      shell: bash
+      if: inputs.event_action == 'create_issue_for_missing_guidelines'
+      run: |
+        required_flags=(
+          "F1: Demonstrating empathy and kindness toward other people"
+          "F2: Being respectful of differing opinions, viewpoints, and experiences"
+          "F3: Giving and gracefully accepting constructive feedback"
+          "F4: Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience"
+          "F5: Focusing on what is best not just for us as individuals, but for the overall community"
+          "F6: The use of sexualized language or imagery, and sexual attention or advances of any kind"
+          "F7: Trolling, insulting or derogatory comments, and personal or political attacks"
+          "F8: Public or private harassment"
+          "F9: Publishing others’ private information, such as a physical or email address, without their explicit permission"
+          "F10: Other conduct which could reasonably be considered inappropriate in a professional setting"
+        )
+
+        missing_flags="${{ inputs.missing_flags }}"
+        IFS=',' read -r -a missing_flags_array <<< "$missing_flags"
+
+        issue_body="We have analyzed the current Code of Conduct and identified areas where it could be enhanced by including the following guidelines:\n\n"
+
+        positive_behavior_guidelines=""
+        unacceptable_behavior_guidelines=""
+
+        for flag in "${missing_flags_array[@]}"; do
+          for required_flag in "${required_flags[@]}"; do
+            if [[ $required_flag == $flag:* ]]; then
+              if [[ $flag == F[1-5]* ]]; then
+                positive_behavior_guidelines+="- ${required_flag#*: }\n"
+              elif [[ $flag == F[6-9]* ]] || [[ $flag == F10* ]]; then
+                unacceptable_behavior_guidelines+="- ${required_flag#*: }\n"
+              fi
+            done
+          done
+        done
+
+        if [ -n "$positive_behavior_guidelines" ]; then
+          issue_body+="Examples of behavior that contributes to creating a positive environment include:\n"
+          issue_body+="$positive_behavior_guidelines\n"
+        fi
+
+        if [ -n "$unacceptable_behavior_guidelines" ]; then
+          issue_body+="Examples of unacceptable behavior by participants include:\n"
+          issue_body+="$unacceptable_behavior_guidelines\n"
+        fi
+
+        issue_body+="\nIncorporating these guidelines will help ensure a more inclusive and respectful environment for all contributors."
+
+        echo "Creating issue with the following body:"
+        echo "$issue_body"
+
+        curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ inputs.bot_token }}" \
+          https://api.github.com/repos/${{ inputs.repo_name }}/issues \
+          -d "{\"title\": \"Enhance Code of Conduct with Additional Guidelines\", \"body\": \"$issue_body\"}"
