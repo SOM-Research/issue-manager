@@ -4,9 +4,6 @@ inputs:
   repo_name:
     description: ''
     required: true
-  repo_url:
-    description: 'Sendinblue API key'
-    required: true
   bot_token:
     description: 'Bot GitHub token'
     required: true
