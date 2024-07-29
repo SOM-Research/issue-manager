@@ -11,7 +11,7 @@ inputs:
     description: 'The action to determine which type of issue to create'
     required: true
   missing_flags:
-    description: 'A list of missing guidelines flags'
+    description: 'A comma-separated list of missing guidelines flags'
     required: false
 
 runs:
@@ -65,7 +65,7 @@ runs:
               elif [[ $flag == F[6-9]* ]] || [[ $flag == F10* ]]; then
                 unacceptable_behavior_guidelines+="- ${required_flag#*: }\n"
               fi
-            done
+            fi
           done
         done
 
